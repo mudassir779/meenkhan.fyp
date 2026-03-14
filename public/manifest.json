@@ -1,0 +1,18 @@
+{
+  "name": "SAFORA - Road Safety",
+  "short_name": "SAFORA",
+  "description": "AI-powered road safety companion - Made by Aiman",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A3D4C",
+  "theme_color": "#0A3D4C",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
