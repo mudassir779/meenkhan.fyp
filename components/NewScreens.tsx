@@ -1133,7 +1133,9 @@ export function MonitoringScreen({ nav, activeTrip, onEndTrip, onTriggerSOS }: {
     confidence: 0,
   })
 
-  const AI_SERVER = 'http://localhost:8000'
+  const AI_SERVER = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:8000'
+    : 'https://mudassirkhan3232-safora-ai.hf.space'
 
   // Start camera
   useEffect(() => {
@@ -1535,7 +1537,7 @@ export function MonitoringScreen({ nav, activeTrip, onEndTrip, onTriggerSOS }: {
         }`}>
           <div className={`w-2.5 h-2.5 rounded-full animate-pulse ${aiConnected ? 'bg-green-500' : 'bg-amber-500'}`} />
           <span className={`text-xs font-medium ${aiConnected ? 'text-green-700' : 'text-amber-700'}`}>
-            {aiConnected ? 'AI Model Active · Processing Frames' : 'AI Server Offline · Run: python ai-server/server.py'}
+            {aiConnected ? 'AI Model Active · Processing Frames' : 'AI Server Starting · Please wait...'}
           </span>
         </div>
 
