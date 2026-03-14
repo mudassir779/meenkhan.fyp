@@ -3,6 +3,55 @@ import { connectDB } from '@/lib/db'
 import ChatMessage from '@/lib/models/ChatMessage'
 import { requireAuth } from '@/lib/auth'
 import { chatMessageSchema } from '@/lib/validators'
+import { GoogleGenerativeAI } from '@google/generative-ai'
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '')
+
+const SYSTEM_PROMPT = `You are Alex, the SAFORA AI driving safety assistant. Your role is to help drivers stay safe on the road.
+
+Key responsibilities:
+- Provide driving safety tips and advice
+- Alert about drowsy/distracted driving dangers
+- Suggest rest stops when drivers are tired
+- Give emergency assistance guidance
+- Share road safety rules and best practices
+- Help with route safety information
+
+Personality:
+- Friendly, calm, and supportive
+- Always prioritize driver safety
+- Keep responses concise (2-3 sentences max) since drivers shouldn't read long texts
+- Use simple, clear language
+- If someone seems tired or impaired, strongly recommend stopping
+
+Important: You are ONLY a driving safety assistant. If asked about unrelated topics, politely redirect to driving safety.`
+
+async function getAIResponse(userMessage: string, chatHistory: { role: string; text: string }[]): Promise<string> {
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
+
+    const history = chatHistory.slice(-10).map((msg) => ({
+      role: msg.role === 'user' ? 'user' as const : 'model' as const,
+      parts: [{ text: msg.text }],
+    }))
+
+    const chat = model.startChat({
+      history,
+      generationConfig: {
+        maxOutputTokens: 200,
+        temperature: 0.7,
+      },
+    })
+
+    const result = await chat.sendMessage(`${SYSTEM_PROMPT}\n\nUser message: ${userMessage}`)
+    const response = result.response.text()
+
+    return response || "I'm here to help keep you safe on the road. Could you please repeat that?"
+  } catch (error) {
+    console.error('Gemini API error:', error)
+    return "I'm having trouble connecting right now. Please stay safe and try again in a moment!"
+  }
+}
 
 export async function GET() {
   try {
@@ -40,23 +89,18 @@ export async function POST(req: NextRequest) {
       text: parsed.data.text,
     })
 
-    // Bot auto-reply (placeholder — user will add AI model later)
-    const botReplies: Record<string, string> = {
-      hello: "Hello! I'm Alex, your SAFORA AI assistant. How can I help you drive safely today?",
-      help: "I can help you with: driving tips, safety alerts, rest suggestions, and emergency assistance. What do you need?",
-      tired: "If you're feeling tired, I recommend taking a break at the nearest rest stop. Your safety is the priority!",
-      speed: "Please maintain a safe speed. Remember, the speed limit is there for everyone's safety.",
-    }
+    // Get recent chat history for context
+    const recentMessages = await ChatMessage.find({ userId: user.id })
+      .sort({ createdAt: -1 })
+      .limit(10)
 
-    const lowerText = parsed.data.text.toLowerCase()
-    let botReply = "I'm here to help keep you safe on the road. Feel free to ask me anything about driving safety!"
+    const chatHistory = recentMessages.reverse().map((msg) => ({
+      role: msg.role,
+      text: msg.text,
+    }))
 
-    for (const [keyword, reply] of Object.entries(botReplies)) {
-      if (lowerText.includes(keyword)) {
-        botReply = reply
-        break
-      }
-    }
+    // Get AI response from Gemini
+    const botReply = await getAIResponse(parsed.data.text, chatHistory)
 
     const botMsg = await ChatMessage.create({
       userId: user.id,

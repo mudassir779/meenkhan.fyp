@@ -271,11 +271,11 @@ export default function SaforaApp() {
             </div>
             <div>
               <p className="text-white text-sm font-bold">Install SAFORA App</p>
-              <p className="text-white/70 text-xs">Home screen pe add karo</p>
+              <p className="text-white/70 text-xs">Add to home screen</p>
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setShowInstallBanner(false)} className="text-white/60 text-xs px-2 py-1">Baad mein</button>
+            <button onClick={() => setShowInstallBanner(false)} className="text-white/60 text-xs px-2 py-1">Later</button>
             <button onClick={handleInstall} className="bg-white text-safora-700 text-xs font-bold px-4 py-1.5 rounded-full">Install</button>
           </div>
         </motion.div>
